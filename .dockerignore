@@ -1,0 +1,14 @@
+.git
+.gitignore
+**/__pycache__
+**/*.py[cod]
+server/venv
+server/.env
+.env
+*.env.local
+*.log
+*.zip
+.idea
+.vscode
+Thumbs.db
+.DS_Store
