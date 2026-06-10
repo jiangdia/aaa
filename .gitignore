@@ -1,0 +1,25 @@
+# Secrets
+server/.env
+.env
+*.env.local
+
+# Python
+server/venv/
+__pycache__/
+*.py[cod]
+.Python
+*.egg-info/
+.venv/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
+nohup.out
+
+# Misc archives
+*.zip

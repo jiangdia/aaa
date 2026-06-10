@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide — PPT 秒变科技演示稿</title>
+  <meta name="description" content="上传 PPT，一键生成 9:16 竖屏科技风 HTML 演示稿。">
+  <script src="https://lf26-cdn-tos.bytecdntp.com/cdn/expire-1-M/tailwindcss/3.0.23/tailwind.min.js"></script>
+  <link href="https://fonts.loli.net/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    :root {
+      --bg: #020204;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --cyan: #5eead4;
+      --violet: #a78bfa;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Noto Sans SC', 'Syne', sans-serif;
+      background: var(--bg);
+      color: #fafafa;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Canvas ── */
+    .canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    .orb {
+      position: absolute; border-radius: 50%; filter: blur(90px);
+      animation: orb 20s ease-in-out infinite;
+    }
+    .orb-1 { width: 50vmax; height: 50vmax; background: rgba(94,234,212,0.18); top: -25%; left: -15%; }
+    .orb-2 { width: 40vmax; height: 40vmax; background: rgba(167,139,250,0.22); top: 20%; right: -20%; animation-delay: -8s; }
+    .orb-3 { width: 35vmax; height: 35vmax; background: rgba(56,189,248,0.12); bottom: -15%; left: 30%; animation-delay: -14s; }
+    @keyframes orb {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(4vw,-3vh) scale(1.05); }
+      66% { transform: translate(-3vw,2vh) scale(0.98); }
+    }
+
+    .lines {
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black, transparent);
+    }
+
+    .beam {
+      position: absolute; top: 0; left: 50%; width: 1px; height: 100%;
+      background: linear-gradient(180deg, transparent, rgba(94,234,212,0.35), transparent);
+      transform: translateX(-50%);
+      opacity: 0.5;
+    }
+
+    .grain {
+      position: absolute; inset: 0; opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 100;
+      display: flex; align-items: center; gap: 32px;
+      padding: 10px 12px 10px 20px;
+      border-radius: 999px;
+      background: rgba(12,12,18,0.65);
+      border: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 24px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .logo {
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px;
+      letter-spacing: -0.02em;
+    }
+    .logo span { color: var(--cyan); }
+    .nav-cta {
+      padding: 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      background: #fafafa; color: #020204;
+      transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+    }
+    .nav-cta:hover { transform: scale(1.04); box-shadow: 0 8px 32px rgba(94,234,212,0.35); }
+
+    /* ── Hero ── */
+    .hero { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 120px 24px 80px; text-align: center; position: relative; z-index: 1; }
+    .hero-tag {
+      font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.35em; text-transform: uppercase;
+      color: rgba(94,234,212,0.85); margin-bottom: 28px;
+    }
+    .hero h1 {
+      font-size: clamp(3rem, 9vw, 6.5rem);
+      font-weight: 900; line-height: 0.95; letter-spacing: -0.04em;
+      max-width: 14ch; margin: 0 auto 32px;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(120deg, #fff 0%, #5eead4 45%, #c4b5fd 90%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: clamp(1rem, 2.2vw, 1.25rem); font-weight: 300;
+      color: rgba(161,161,170,0.95); max-width: 28rem; margin: 0 auto 48px; line-height: 1.7;
+    }
+
+    /* ── Main workspace ── */
+    .workspace {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 0 auto; padding: 0 24px 120px;
+    }
+    .workspace-grid {
+      display: grid; grid-template-columns: 1fr; gap: 20px;
+    }
+    @media (min-width: 960px) {
+      .workspace-grid { grid-template-columns: 1fr 1fr; gap: 24px; align-items: stretch; }
+    }
+
+    .panel {
+      border-radius: 28px;
+      background: rgba(10,10,16,0.75);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(20px);
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+    }
+
+    /* Upload */
+    .drop {
+      position: relative; margin: 24px; padding: 56px 32px; text-align: center;
+      border-radius: 20px; cursor: pointer;
+      background: rgba(255,255,255,0.02);
+      transition: all 0.5s var(--ease);
+    }
+    .drop::before {
+      content: ''; position: absolute; inset: 0; border-radius: 20px; padding: 1px;
+      background: linear-gradient(135deg, rgba(94,234,212,0.5), rgba(167,139,250,0.2), rgba(94,234,212,0.1));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor; mask-composite: exclude;
+      opacity: 0.6; transition: opacity 0.4s;
+    }
+    .drop:hover::before, .drop.active::before { opacity: 1; }
+    .drop:hover, .drop.active {
+      background: rgba(94,234,212,0.04);
+      transform: translateY(-2px);
+      box-shadow: 0 0 80px rgba(94,234,212,0.12);
+    }
+    .drop-icon {
+      width: 64px; height: 64px; margin: 0 auto 24px; border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(145deg, rgba(94,234,212,0.12), rgba(167,139,250,0.08));
+      border: 1px solid rgba(94,234,212,0.25);
+    }
+    .drop-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 8px; }
+    .drop-hint { font-size: 13px; color: rgba(161,161,170,0.8); }
+
+    .actions { display: flex; gap: 10px; padding: 0 24px 24px; flex-wrap: wrap; }
+    .btn-main {
+      flex: 1; min-width: 140px; padding: 16px 24px; border-radius: 14px;
+      font-weight: 700; font-size: 14px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, #5eead4, #818cf8);
+      color: #020204;
+      box-shadow: 0 12px 40px rgba(94,234,212,0.25);
+      transition: all 0.4s var(--ease);
+    }
+    .btn-main:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 20px 50px rgba(94,234,212,0.35); }
+    .btn-main:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-alt {
+      flex: 1; min-width: 100px; padding: 16px 20px; border-radius: 14px;
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      background: transparent; color: #fafafa;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: all 0.35s var(--ease);
+    }
+    .btn-alt:hover:not(:disabled) { border-color: rgba(94,234,212,0.4); background: rgba(94,234,212,0.05); }
+    .btn-alt:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .meta-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px 24px; border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px; color: rgba(161,161,170,0.7);
+      font-family: 'Syne', sans-serif; letter-spacing: 0.05em;
+    }
+    .meta-row .count { color: var(--cyan); font-weight: 600; }
+
+    /* Preview */
+    .preview-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .dots { display: flex; gap: 7px; }
+    .dots i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+    .preview-label { font-family: 'Syne', sans-serif; font-size: 12px; color: rgba(161,161,170,0.6); letter-spacing: 0.1em; }
+
+    .preview-body {
+      min-height: 520px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 32px 24px 40px;
+    }
+    .device {
+      position: relative; width: 240px;
+      padding: 10px; border-radius: 32px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03));
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.4) inset, 0 32px 80px rgba(0,0,0,0.6), 0 0 60px rgba(94,234,212,0.08);
+    }
+    .device-glow {
+      position: absolute; inset: -30px; border-radius: 48px; z-index: -1;
+      background: radial-gradient(ellipse at center, rgba(94,234,212,0.15), transparent 70%);
+      animation: glow-pulse 4s ease-in-out infinite;
+    }
+    @keyframes glow-pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+    .device-screen {
+      aspect-ratio: 9/16; border-radius: 24px; overflow: hidden;
+      background: #000; position: relative;
+    }
+    .device-screen iframe {
+      width: 450px; height: 800px; border: 0;
+      transform: scale(0.533); transform-origin: top left;
+    }
+    .device-notch {
+      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+      width: 72px; height: 20px; border-radius: 999px; background: #000; z-index: 5;
+    }
+
+    .empty-state { text-align: center; color: rgba(113,113,122,0.9); }
+    .empty-state p { font-size: 14px; margin-top: 16px; }
+    .empty-ring {
+      width: 100px; height: 100px; margin: 0 auto; border-radius: 50%;
+      border: 1px dashed rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center;
+      animation: spin-slow 24s linear infinite;
+    }
+    @keyframes spin-slow { to { transform: rotate(360deg); } }
+    .empty-ring inner {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: rgba(94,234,212,0.06);
+    }
+
+    .loading-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .loading-stage { font-size: 12px; color: rgba(161,161,170,0.8); padding-left: 30px; }
+    .ai-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      margin: 0 24px 0; padding: 8px 14px; border-radius: 10px; font-size: 12px;
+      background: rgba(94,234,212,0.06); border: 1px solid rgba(94,234,212,0.15);
+      color: rgba(161,161,170,0.9);
+    }
+    .ai-badge.ready { color: var(--cyan); border-color: rgba(94,234,212,0.35); }
+    .ai-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    .llm-panel { margin: 20px 24px 0; padding: 18px; border-radius: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); }
+    .llm-panel h3 { font-size: 13px; font-weight: 600; margin-bottom: 14px; color: rgba(250,250,250,0.9); font-family: 'Syne', sans-serif; letter-spacing: 0.06em; }
+    .llm-grid { display: grid; gap: 12px; }
+    .llm-field label { display: block; font-size: 11px; color: rgba(161,161,170,0.85); margin-bottom: 6px; letter-spacing: 0.04em; }
+    .llm-field input, .llm-field select {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08);
+      color: #fafafa; font-size: 13px; outline: none;
+      transition: border-color 0.25s var(--ease);
+    }
+    .llm-field input:focus, .llm-field select:focus { border-color: rgba(94,234,212,0.45); }
+    .llm-field select option { background: #111; }
+    .llm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .llm-row { grid-template-columns: 1fr; } }
+    .llm-hint { font-size: 11px; color: rgba(113,113,122,0.9); margin-top: 10px; line-height: 1.5; }
+    .spinner {
+      width: 18px; height: 18px; border: 2px solid rgba(94,234,212,0.2);
+      border-top-color: var(--cyan); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .err {
+      margin: 0 24px 24px; padding: 14px 18px; border-radius: 12px;
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5; font-size: 13px;
+    }
+
+    .toast {
+      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%); z-index: 200;
+      padding: 14px 28px; border-radius: 999px; font-size: 14px;
+      background: rgba(12,12,18,0.9); border: 1px solid rgba(94,234,212,0.3);
+      backdrop-filter: blur(16px); box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+      animation: toast 0.45s var(--ease);
+    }
+    @keyframes toast { from { opacity: 0; transform: translate(-50%, 12px); } }
+
+    /* Demo phone in hero background */
+    .hero-deco {
+      position: absolute; right: 5%; top: 50%; transform: translateY(-50%);
+      width: 220px; opacity: 0.35; pointer-events: none;
+      display: none;
+    }
+    @media (min-width: 1200px) { .hero-deco { display: block; } }
+
+    .float-card {
+      position: absolute; padding: 12px 16px; border-radius: 12px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(12px); font-size: 11px; color: rgba(161,161,170,0.9);
+      animation: float-card 6s ease-in-out infinite;
+    }
+    .float-card strong { display: block; color: #fff; font-size: 13px; margin-bottom: 2px; }
+    .fc-1 { top: 18%; left: 8%; animation-delay: 0s; }
+    .fc-2 { bottom: 22%; right: 10%; animation-delay: -2s; }
+    @keyframes float-card {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    footer {
+      position: relative; z-index: 1; text-align: center;
+      padding: 40px 24px; font-size: 12px; color: rgba(113,113,122,0.6);
+      font-family: 'Syne', sans-serif; letter-spacing: 0.08em;
+    }
+  </style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="lines"></div>
+    <div class="beam"></div>
+    <div class="grain"></div>
+  </div>
+
+  <div id="app">
+    <nav class="nav">
+      <div class="logo">Slide<span>.</span></div>
+      <a href="#workspace" class="nav-cta">上传 PPT</a>
+    </nav>
+
+    <header class="hero">
+      <div class="float-card fc-1"><strong>9:16</strong>竖屏演示</div>
+      <div class="float-card fc-2"><strong>AI</strong>ppt-generator 同款效果</div>
+      <p class="hero-tag">AI · Keynote Style</p>
+      <h1>你的 PPT，<br><em>值得更好看</em></h1>
+      <p class="hero-sub">上传演示文稿，AI 按 ppt-generator 规则提炼讲稿、设计结构，生成 9:16 竖屏 HTML 演示稿。</p>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <div class="workspace-grid">
+        <!-- Left: upload -->
+        <div class="panel">
+          <div class="ai-badge" :class="{ ready: configReady }">
+            <span class="dot"></span>
+            {{ configReady ? `已选 · ${model}` : '请先配置 API Key 与模型' }}
+          </div>
+
+          <div class="llm-panel">
+            <h3>MODEL</h3>
+            <div class="llm-grid">
+              <div class="llm-row">
+                <div class="llm-field">
+                  <label>服务商</label>
+                  <select v-model="providerId" @change="onProviderChange">
+                    <option v-for="p in presets" :key="p.id" :value="p.id">{{ p.name }}</option>
+                  </select>
+                </div>
+                <div class="llm-field">
+                  <label>模型</label>
+                  <select v-if="currentModels.length" v-model="model">
+                    <option v-for="m in currentModels" :key="m" :value="m">{{ m }}</option>
+                  </select>
+                  <input v-else v-model="model" type="text" placeholder="输入模型名称">
+                </div>
+              </div>
+              <div class="llm-field">
+                <label>API 地址</label>
+                <input v-model="baseUrl" type="url" placeholder="https://api.openai.com/v1">
+              </div>
+              <div class="llm-field">
+                <label>API Key</label>
+                <input v-model="apiKey" type="password" placeholder="sk-..." autocomplete="off">
+              </div>
+            </div>
+            <p class="llm-hint">Key 仅用于本次请求转发，保存在浏览器本地，不会写入服务器配置文件。</p>
+          </div>
+
+          <div
+            class="drop"
+            :class="{ active: isDragging }"
+            @click="$refs.fileInput.click()"
+            @dragover.prevent="isDragging = true"
+            @dragleave.prevent="isDragging = false"
+            @drop.prevent="handleDrop"
+          >
+            <input ref="fileInput" type="file" accept=".ppt,.pptx,.pps,.ppsx,.odp" style="display:none" @change="handleFileSelect">
+            <div class="drop-icon">
+              <svg width="28" height="28" fill="none" stroke="#5eead4" stroke-width="1.5" stroke-linecap="round">
+                <path d="M14 20V8M9 13l5-5 5 5"/><rect x="3" y="3" width="22" height="22" rx="5"/>
+              </svg>
+            </div>
+            <p class="drop-title">{{ fileName || '拖入演示文稿' }}</p>
+            <p class="drop-hint">支持 PPT / PPTX / PPS / PPSX / ODP · 最大 50MB</p>
+          </div>
+
+          <div v-if="loading" class="loading-bar" style="display:flex;padding:16px 24px;color:var(--cyan);font-size:13px">
+            <div style="display:flex;align-items:center;gap:12px;width:100%">
+              <div class="spinner"></div>
+              {{ loadingText }}
+            </div>
+            <p class="loading-stage">{{ loadingStage }}</p>
+          </div>
+
+          <div v-if="error" class="err">{{ error }}</div>
+
+          <div class="actions">
+            <button class="btn-main" :disabled="!htmlOutput" @click="downloadHtml">下载 HTML</button>
+            <button class="btn-alt" :disabled="!htmlOutput" @click="openPreview">全屏预览</button>
+          </div>
+
+          <div class="meta-row">
+            <span>{{ fileName ? fileName : '等待文件' }}</span>
+            <span v-if="slides.length" class="count">{{ slides.length }} SLIDES</span>
+          </div>
+        </div>
+
+        <!-- Right: preview -->
+        <div class="panel">
+          <div class="preview-top">
+            <div class="dots">
+              <i style="background:#ff5f56"></i>
+              <i style="background:#ffbd2e"></i>
+              <i style="background:#27c93f"></i>
+            </div>
+            <span class="preview-label">LIVE PREVIEW</span>
+          </div>
+          <div class="preview-body">
+            <template v-if="previewUrl">
+              <div class="device">
+                <div class="device-glow"></div>
+                <div class="device-screen">
+                  <div class="device-notch"></div>
+                  <iframe :src="previewUrl" title="预览"></iframe>
+                </div>
+              </div>
+            </template>
+            <div v-else class="empty-state">
+              <div class="empty-ring">
+                <svg width="32" height="32" fill="none" stroke="rgba(94,234,212,0.4)" stroke-width="1">
+                  <rect x="6" y="2" width="20" height="28" rx="3"/><path d="M10 10h12M10 15h8"/>
+                </svg>
+              </div>
+              <p>预览将出现在这里</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer>Slide · Crafted for beautiful presentations</footer>
+
+    <div v-if="toast" class="toast">{{ toast }}</div>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="js/presentation-parser.js"></script>
+  <script src="js/html-generator.js"></script>
+  <script>
+    const { createApp, ref, computed, watch, onMounted } = Vue;
+
+    const DEFAULT_PRESETS = [
+      { id: 'openai', name: 'OpenAI', base_url: 'https://api.openai.com/v1', models: ['gpt-4o', 'gpt-4o-mini'] },
+      { id: 'deepseek', name: 'DeepSeek', base_url: 'https://api.deepseek.com/v1', models: ['deepseek-chat'] },
+      { id: 'custom', name: '自定义', base_url: '', models: [] },
+    ];
+    const STORAGE_KEY = 'slide_llm_config';
+
+    createApp({
+      setup() {
+        const isDragging = ref(false);
+        const fileName = ref('');
+        const slides = ref([]);
+        const htmlOutput = ref('');
+        const previewUrl = ref('');
+        const error = ref('');
+        const loading = ref(false);
+        const loadingText = ref('正在生成…');
+        const loadingStage = ref('');
+        const toast = ref('');
+
+        const presets = ref(DEFAULT_PRESETS);
+        const providerId = ref('openai');
+        const apiKey = ref('');
+        const baseUrl = ref('https://api.openai.com/v1');
+        const model = ref('gpt-4o-mini');
+
+        const currentProvider = computed(() => presets.value.find((p) => p.id === providerId.value));
+        const currentModels = computed(() => currentProvider.value?.models || []);
+        const configReady = computed(() => !!(apiKey.value.trim() && model.value.trim() && baseUrl.value.trim()));
+
+        function saveConfig() {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            providerId: providerId.value,
+            apiKey: apiKey.value,
+            baseUrl: baseUrl.value,
+            model: model.value,
+          }));
+        }
+
+        function loadConfig() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return;
+            const c = JSON.parse(raw);
+            if (c.providerId) providerId.value = c.providerId;
+            if (c.apiKey) apiKey.value = c.apiKey;
+            if (c.baseUrl) baseUrl.value = c.baseUrl;
+            if (c.model) model.value = c.model;
+          } catch { /* ignore */ }
+        }
+
+        function onProviderChange() {
+          const p = currentProvider.value;
+          if (!p) return;
+          if (p.base_url) baseUrl.value = p.base_url;
+          if (p.models?.length) model.value = p.models[0];
+          saveConfig();
+        }
+
+        watch([providerId, apiKey, baseUrl, model], saveConfig);
+
+        onMounted(async () => {
+          loadConfig();
+          try {
+            const res = await fetch('/api/models');
+            if (res.ok) {
+              const data = await res.json();
+              if (data.presets?.length) presets.value = data.presets;
+              if (!presets.value.find((p) => p.id === providerId.value)) {
+                providerId.value = presets.value[0].id;
+                onProviderChange();
+              }
+            }
+          } catch { /* static host */ }
+        });
+
+        const ACCEPT_EXT = /\.(ppt|pptx|pps|ppsx|odp)$/i;
+
+        function showToast(msg) {
+          toast.value = msg;
+          setTimeout(() => { toast.value = ''; }, 2400);
+        }
+
+        function refreshPreview() {
+          if (previewUrl.value) URL.revokeObjectURL(previewUrl.value);
+          if (!htmlOutput.value) { previewUrl.value = ''; return; }
+          previewUrl.value = URL.createObjectURL(new Blob([htmlOutput.value], { type: 'text/html;charset=utf-8' }));
+        }
+
+        async function generateWithAi(file) {
+          if (!configReady.value) {
+            throw new Error('请先填写 API Key、API 地址和模型');
+          }
+          loadingText.value = 'AI 生成中…';
+          loadingStage.value = `${currentProvider.value?.name || 'AI'} · ${model.value}`;
+          const form = new FormData();
+          form.append('file', file, file.name);
+          form.append('api_key', apiKey.value.trim());
+          form.append('base_url', baseUrl.value.trim());
+          form.append('model', model.value.trim());
+          const res = await fetch('/api/generate', { method: 'POST', body: form });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            const msg = typeof data.detail === 'string' ? data.detail : data.detail?.[0]?.msg || `生成失败 (${res.status})`;
+            throw new Error(msg);
+          }
+          htmlOutput.value = data.html;
+          slides.value = Array.from({ length: data.slides_count || 0 }, (_, i) => ({ index: i + 1 }));
+          refreshPreview();
+          showToast(`完成 · ${data.model || model.value}`);
+        }
+
+        async function generateFallback(file) {
+          loadingText.value = '本地生成中…';
+          loadingStage.value = 'AI 不可用，使用基础模板（效果较弱）';
+          slides.value = await PresentationParser.parse(file);
+          if (!slides.value.length) throw new Error('未能读取到文字内容');
+          htmlOutput.value = HtmlGenerator.generate(slides.value, fileName.value);
+          refreshPreview();
+          showToast(`本地完成 · ${slides.value.length} 页`);
+        }
+
+        async function processFile(file) {
+          if (!file) return;
+          if (!ACCEPT_EXT.test(file.name)) {
+            error.value = '支持格式：.ppt .pptx .pps .ppsx .odp';
+            return;
+          }
+          if (file.size > 50 * 1024 * 1024) { error.value = '文件不能超过 50MB'; return; }
+          error.value = '';
+          loading.value = true;
+          loadingText.value = '解析文件…';
+          loadingStage.value = '提取幻灯片文字';
+          fileName.value = file.name;
+          htmlOutput.value = '';
+
+          try {
+            await generateWithAi(file);
+          } catch (e) {
+            if (String(e.message).includes('fetch') || String(e.message).includes('Failed')) {
+              await generateFallback(file);
+            } else {
+              error.value = e.message || '生成失败，请重试';
+              slides.value = [];
+              htmlOutput.value = '';
+              refreshPreview();
+            }
+          } finally {
+            loading.value = false;
+            loadingStage.value = '';
+          }
+        }
+
+        function handleFileSelect(e) { processFile(e.target.files[0]); }
+        function handleDrop(e) { isDragging.value = false; processFile(e.dataTransfer.files[0]); }
+
+        function downloadHtml() {
+          if (!htmlOutput.value) return;
+          const name = (fileName.value || 'slides').replace(/\.pptx$/i, '') + '.html';
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([htmlOutput.value], { type: 'text/html;charset=utf-8' }));
+          a.download = name; a.click(); URL.revokeObjectURL(a.href);
+          showToast('已下载');
+        }
+
+        function openPreview() {
+          if (!htmlOutput.value) return;
+          const w = window.open('', '_blank');
+          w.document.write(htmlOutput.value);
+          w.document.close();
+        }
+
+        return {
+          isDragging, fileName, slides, htmlOutput, previewUrl,
+          error, loading, loadingText, loadingStage, toast,
+          presets, providerId, apiKey, baseUrl, model,
+          currentModels, configReady, onProviderChange,
+          handleFileSelect, handleDrop, downloadHtml, openPreview,
+        };
+      },
+    }).mount('#app');
+  </script>
+</body>
+</html>
